@@ -4,26 +4,10 @@ const { DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
   // defino el modelo
   sequelize.define(
-    'dog',
+    'temperament',
     {
-      imagen: {
+      name: {
         type: DataTypes.STRING,
-        allowNull: false,
-      },
-      nombre: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      altura: {
-        type: DataTypes.FLOAT,
-        allowNull: false,
-      },
-      peso: {
-        type: DataTypes.FLOAT,
-        allowNull: false,
-      },
-      anos_vida: {
-        type: DataTypes.INTEGER,
         allowNull: false,
       },
     },
