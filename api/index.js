@@ -21,14 +21,19 @@ require('dotenv').config();
 
 const server = require('./src/app.js');
 
-const { fetchData } = require('./src/controllers/temperamentController.js');
+const {
+  fetchDataTemperaments,
+} = require('./src/controllers/temperamentController.js');
+
+const { fetchDataDogs } = require('./src/controllers/dogController.js');
 
 const { conn } = require('./src/db.js');
 const { PORT } = process.env;
 
 // Syncing all the models at once.
 conn.sync({ force: true }).then(() => {
-  fetchData();
+  fetchDataTemperaments();
+  fetchDataDogs();
   server.listen(PORT, () => {
     console.log(`%s listening at ${PORT}`); // eslint-disable-line no-console
   });

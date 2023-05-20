@@ -1,7 +1,7 @@
 const { Temperament } = require('../db');
 const axios = require('axios');
 
-async function fetchData() {
+async function fetchDataTemperaments() {
   try {
     const config = {
       method: 'get',
@@ -91,5 +91,5 @@ const getAllTemperaments = async (req, res, next) => {
 module.exports = {
   createTemperament,
   getAllTemperaments,
-  fetchData,
+  fetchDataTemperaments,
 };
