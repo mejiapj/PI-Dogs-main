@@ -15,7 +15,6 @@ async function fetchDataTemperaments() {
     if (response.data) {
       const temperaments = extractTemperaments(response.data);
       temperaments.sort((a, b) => a.name.localeCompare(b.name));
-      // console.log(temperaments);
       await fillDbTemperaments(temperaments);
     }
   } catch (error) {
@@ -45,10 +44,11 @@ function extractTemperaments(data) {
 }
 
 async function fillDbTemperaments(temperaments) {
-  // console.log(temperaments);
   try {
     if (temperaments.length > 0) {
-      await Temperament.bulkCreate(temperaments);
+      await Temperament.bulkCreate(temperaments, {
+        ignoreDuplicates: true,
+      });
     }
   } catch (error) {
     console.log(error);
