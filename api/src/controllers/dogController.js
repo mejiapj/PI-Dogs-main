@@ -1,6 +1,7 @@
 const { Dog, Temperament } = require('../db');
 const axios = require('axios');
 const { Op } = require('sequelize');
+const { API_KEY } = process.env;
 
 const createDog = async (req, res, next) => {
   try {
@@ -16,8 +17,6 @@ const createDog = async (req, res, next) => {
         .json({ message: 'El perro ya existe en la base de datos' });
     }
 
-    let dog;
-
     let uniqueTemperaments = [];
 
     if (temperaments) {
@@ -26,10 +25,8 @@ const createDog = async (req, res, next) => {
         .map((temp) => temp.trim())
         .sort();
 
-      console.log(uniqueTemperaments);
-
       if (uniqueTemperaments.length === 0) {
-        return res.status(500).json({
+        return res.status(400).json({
           message: 'Se requiere al menos un temperamento para crear un perro',
         });
       }
@@ -54,33 +51,39 @@ const createDog = async (req, res, next) => {
                 ', '
               )} no existen`;
 
-        return res.status(500).json({ message });
+        return res.status(400).json({ message });
       }
 
       const finalTemperaments = existingTemperaments;
 
-      dog = await Dog.create({
-        nombre,
+      await Dog.create({
         imagen,
+        nombre,
         altura,
         peso,
         anos_vida,
+      }).then(async (createdDog) => {
+        await createdDog.setTemperaments(finalTemperaments);
+        return res
+          .status(201)
+          .json({ message: 'El perro fue creado satisfactoriamente' });
       });
-
-      await dog.setTemperaments(finalTemperaments);
     } else {
-      dog = await Dog.create({
-        nombre,
+      await Dog.create({
         imagen,
+        nombre,
         altura,
         peso,
         anos_vida,
+      }).then(() => {
+        return res
+          .status(201)
+          .json({ message: 'El perro fue creado satisfactoriamente' });
       });
     }
-
-    res.status(201).json({ message: 'El perro fue creado satisfactoriamente' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(error);
+    return res.status(500).json({ message: 'Error al crear el perro' });
   }
 };
 
@@ -122,92 +125,200 @@ const getAllDogs = async (req, res, next) => {
 
     return res.status(200).json(modifiedDogs);
   } catch (error) {
+    console.error(error);
     return res
       .status(500)
       .json({ message: 'Ocurrió un error al obtener los perros' });
   }
 };
-////////////////////////////////////////////
+
 const getDogById = async (req, res) => {
   const idRaza = req.params.idRaza;
 
   try {
-    const dog = await Dog.findByPk(idRaza, {
-      include: Temperament,
-    });
+    // Buscar en la API
+    let apiDog = null;
+    try {
+      const apiResponse = await axios.get(
+        `https://api.thedogapi.com/v1/breeds/${idRaza}`
+      );
+      apiDog = apiResponse.data;
+    } catch (apiError) {
+      // Manejar el error de la API específicamente
+      console.log(apiError);
+      return res
+        .status(500)
+        .json({ message: 'Error al buscar la raza en la API' });
+    }
+
+    const dogFromAPI = {
+      id: apiDog.id,
+      imagen: {
+        id: apiDog.reference_image_id,
+      },
+      nombre: apiDog.name,
+      altura: {
+        imperial: apiDog.height.imperial,
+        metric: apiDog.height.metric,
+      },
+      peso: {
+        imperial: apiDog.weight.imperial,
+        metric: apiDog.weight.metric,
+      },
+      anos_vida: apiDog.life_span,
+      temperament: apiDog.temperament,
+    };
+
+    // Buscar en la base de datos
+    let dbDog = null;
+    try {
+      dbDog = await Dog.findByPk(idRaza, {
+        include: [
+          {
+            model: Temperament,
+            attributes: ['name'],
+            through: {
+              attributes: [],
+            },
+          },
+        ],
+      });
+    } catch (dbError) {
+      // Manejar el error de la base de datos específicamente
+      console.log(dbError);
+      return res
+        .status(500)
+        .json({ message: 'Error al buscar la raza en la base de datos' });
+    }
+
+    let dog = null;
+    if (dogFromAPI) {
+      dog = dogFromAPI;
+    } else if (dbDog) {
+      const temperaments = dbDog.temperaments.map(
+        (temperament) => temperament.name
+      );
+      dog = {
+        id: dbDog.id,
+        imagen: dbDog.imagen,
+        nombre: dbDog.nombre,
+        altura: dbDog.altura,
+        peso: dbDog.peso,
+        anos_vida: dbDog.anos_vida,
+        temperament: temperaments.join(', '),
+      };
+    }
 
     if (!dog) {
-      return res.status(404).json({ message: 'Raza no encontrada' });
+      return res.status(404).json({ message: 'No se encontró la raza' });
     }
 
-    const temperaments = dog.temperaments
-      .map((temperament) => temperament.name)
-      .join(', ');
-
-    const dogWithTemperaments = { ...dog.toJSON() };
-
-    if (temperaments) {
-      dogWithTemperaments.temperaments = temperaments;
-    } else {
-      delete dogWithTemperaments.temperaments;
-    }
-
-    res.json(dogWithTemperaments);
+    res.json(dog);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: 'Error al obtener la raza' });
+    res.status(500).json({ message: 'Error al buscar la raza' });
   }
 };
 
-//////////////////////////////////////////
 const getDogsByName = async (req, res) => {
   const name = req.query.name;
-
+  // console.log(name);
   try {
-    const dogs = await Dog.findAll({
-      where: {
-        nombre: {
-          [Op.iLike]: `%${name}%`,
-        },
-      },
-      include: [
+    // Buscar en la API
+    let apiDogs = [];
+    try {
+      const apiResponse = await axios.get(
+        `https://api.thedogapi.com/v1/breeds/search?q=${name}`,
         {
-          model: Temperament,
-          attributes: ['name'],
-          through: {
-            attributes: [],
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY,
+          },
+        }
+      );
+      apiDogs = apiResponse.data.map((apiDog) => ({
+        id: apiDog.id,
+        imagen: {
+          id: apiDog.reference_image_id,
+        },
+        nombre: apiDog.name,
+        altura: {
+          imperial: apiDog.height.imperial,
+          metric: apiDog.height.metric,
+        },
+        peso: {
+          imperial: apiDog.weight.imperial,
+          metric: apiDog.weight.metric,
+        },
+        anos_vida: apiDog.life_span,
+        temperament: apiDog.temperament,
+      }));
+    } catch (apiError) {
+      console.log(apiError);
+      // Manejar el error de la API específicamente
+      return res
+        .status(500)
+        .json({ message: 'Error al buscar las razas en la API' });
+    }
+
+    // Buscar en la base de datos
+    let dbDogs = [];
+    try {
+      dbDogs = await Dog.findAll({
+        where: {
+          nombre: {
+            [Op.iLike]: `%${name}%`,
           },
         },
-      ],
+        include: [
+          {
+            model: Temperament,
+            attributes: ['name'],
+            through: {
+              attributes: [],
+            },
+          },
+        ],
+      });
+    } catch (dbError) {
+      console.log(dbError);
+      // Manejar el error de la base de datos específicamente
+      return res
+        .status(500)
+        .json({ message: 'Error al buscar las razas en la base de datos' });
+    }
+
+    const modifiedDbDogs = dbDogs.map((dbDog) => ({
+      id: dbDog.id,
+      imagen: dbDog.imagen,
+      nombre: dbDog.nombre,
+      altura: dbDog.altura,
+      peso: dbDog.peso,
+      anos_vida: dbDog.anos_vida,
+      temperament: dbDog.temperaments
+        .map((temperament) => temperament.name)
+        .join(', '),
+    }));
+
+    // Combinar y homologar los resultados de la API y la base de datos
+    const dogs = [...apiDogs, ...modifiedDbDogs];
+
+    // Eliminar duplicados
+    const uniqueDogs = dogs.filter((dog, index, self) => {
+      const foundIndex = self.findIndex((d) => d.nombre === dog.nombre);
+      return index === foundIndex;
     });
 
-    if (dogs.length === 0) {
+    if (uniqueDogs.length === 0) {
       return res.status(404).json({ message: 'No se encontraron razas' });
     }
 
-    const modifiedDogs = dogs.map((dog) => {
-      const temperaments = dog.temperaments.map(
-        (temperament) => temperament.name
-      );
-      dog = dog.toJSON();
-
-      if (temperaments.length > 0) {
-        dog.temperaments =
-          temperaments.length > 1 ? temperaments.join(',') : temperaments[0];
-      } else {
-        delete dog.temperaments;
-      }
-
-      return dog;
-    });
-
-    res.json(modifiedDogs);
+    res.json(uniqueDogs);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Error al buscar las razas' });
   }
 };
-
 const fetchDataDogs = async () => {
   try {
     const response = await axios.get('https://api.thedogapi.com/v1/breeds');
@@ -219,14 +330,12 @@ const fetchDataDogs = async () => {
           : [];
 
         return {
-          imagen: dog.image.url,
+          imagen: dog.image,
           nombre: dog.name,
-          altura: parseFloat(dog.height.metric),
-          peso: parseFloat(dog.weight.metric),
-          anos_vida: parseInt(dog.life_span.split(' ')[0]),
-          temperaments: temperaments.filter((temp, index, self) => {
-            return self.indexOf(temp) === index;
-          }),
+          altura: dog.height,
+          peso: dog.weight,
+          anos_vida: dog.life_span,
+          temperaments: [...new Set(temperaments)],
         };
       });
 
@@ -238,8 +347,7 @@ const fetchDataDogs = async () => {
         });
       });
 
-      let sortedTemperamentNames = Array.from(uniqueTemperamentNames).sort();
-      // console.log(sortedTemperamentNames);
+      const sortedTemperamentNames = Array.from(uniqueTemperamentNames).sort();
 
       if (sortedTemperamentNames.length > 0) {
         const existingTemperaments = await Temperament.findAll({
@@ -284,6 +392,7 @@ const fetchDataDogs = async () => {
     }
   } catch (error) {
     console.log(error);
+    throw new Error('Error al obtener los datos de los perros');
   }
 };
 
@@ -291,7 +400,6 @@ module.exports = {
   createDog,
   getAllDogs,
   getDogById,
-
   getDogsByName,
   fetchDataDogs,
 };

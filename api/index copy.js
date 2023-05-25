@@ -20,29 +20,32 @@
 require('dotenv').config();
 
 const server = require('./src/app.js');
+
 const {
   fetchDataTemperaments,
 } = require('./src/controllers/temperamentController.js');
+
 const { fetchDataDogs } = require('./src/controllers/dogController.js');
+
 const { conn } = require('./src/db.js');
+const { PORT } = process.env;
 
-// NODE_ENV en "development" entorno de desarrollo y en "production" entorno de producción
-// FORCE_SYNC_DB es true forzará la sincronización de la base de datos
-
-const { PORT, NODE_ENV = 'development', FORCE_SYNC_DB = 'true' } = process.env;
-
-const isDevelopment = NODE_ENV === 'development';
-const shouldForceSyncDB = isDevelopment && FORCE_SYNC_DB === 'true';
-
-conn.sync({ force: shouldForceSyncDB }).then(async () => {
+/*
+// Syncing all the models at once.
+conn.sync({ force: true }).then(() => {
+  fetchDataTemperaments();
+  fetchDataDogs();
+  server.listen(PORT, () => {
+    console.log(`%s listening at ${PORT}`); // eslint-disable-line no-console
+  });
+});
+*/
+conn.sync({ force: true }).then(async () => {
   try {
-    if (shouldForceSyncDB) {
-      await fetchDataTemperaments();
-      await fetchDataDogs();
-    }
+    await fetchDataTemperaments();
+    await fetchDataDogs();
     server.listen(PORT, () => {
-      console.log(`Server listening at ${PORT}`);
-      console.log(NODE_ENV, FORCE_SYNC_DB);
+      console.log(`%s listening at ${PORT}`);
     });
   } catch (error) {
     console.log(error);

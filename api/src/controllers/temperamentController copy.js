@@ -1,5 +1,7 @@
 const { Temperament } = require('../db');
 const axios = require('axios');
+const { conn } = require('../db');
+const sequelize = conn;
 
 async function fetchDataTemperaments() {
   try {
@@ -15,7 +17,6 @@ async function fetchDataTemperaments() {
     if (response.data) {
       const temperaments = extractTemperaments(response.data);
       temperaments.sort((a, b) => a.name.localeCompare(b.name));
-      // console.log(temperaments);
       await fillDbTemperaments(temperaments);
     }
   } catch (error) {
@@ -24,39 +25,49 @@ async function fetchDataTemperaments() {
 }
 
 function extractTemperaments(data) {
-  const temperaments = data.reduce(
-    (acc, obj) => {
-      if (
-        obj.temperament &&
-        typeof obj.temperament === 'string' &&
-        obj.temperament.trim() !== ''
-      ) {
-        const splitTemperaments = obj.temperament.split(', ');
-        splitTemperaments.forEach((temp) => {
-          const trimmedTemp = temp.trim();
-          if (
-            trimmedTemp !== 'anonymous' &&
-            !acc.some((item) => item.name === trimmedTemp)
-          ) {
-            acc.push({ name: trimmedTemp });
-          }
-        });
-      }
-      return acc;
-    },
-    [{ name: 'anonymous' }]
-  );
+  const temperaments = data.reduce((acc, obj) => {
+    if (
+      obj.temperament &&
+      typeof obj.temperament === 'string' &&
+      obj.temperament.trim() !== ''
+    ) {
+      const splitTemperaments = obj.temperament.split(', ');
+      splitTemperaments.forEach((temp) => {
+        const trimmedTemp = temp.trim();
+        if (!acc.some((item) => item.name === trimmedTemp)) {
+          acc.push({ name: trimmedTemp });
+          // acc.push({ id: index + 1, name: trimmedTemp });
+        }
+      });
+    }
+    return acc;
+  }, []);
 
   return temperaments;
 }
 
 async function fillDbTemperaments(temperaments) {
-  // console.log(temperaments);
+  const t = await sequelize.transaction();
+
   try {
-    if (temperaments.length > 0) {
-      await Temperament.bulkCreate(temperaments);
+    for (const temperament of temperaments) {
+      const existingTemperament = await Temperament.findOne({
+        where: { name: temperament.name },
+        transaction: t,
+      });
+
+      if (!existingTemperament) {
+        await Temperament.create(
+          { name: temperament.name },
+          // { id: temperament.id, name: temperament.name },
+          { transaction: t }
+        );
+      }
     }
+
+    await t.commit();
   } catch (error) {
+    await t.rollback();
     console.log(error);
   }
 }
@@ -85,12 +96,13 @@ const createTemperament = async (req, res, next) => {
 
 const getAllTemperaments = async (req, res, next) => {
   try {
+    await fetchDataTemperaments();
+
     const allTemperament = await Temperament.findAll();
+
     return res.status(200).json(allTemperament);
   } catch (error) {
-    return res
-      .status(404)
-      .json({ message: 'No hay Temperamentos en la base de datos' });
+    return res.status(404).json({ message: error.message });
   }
 };
 

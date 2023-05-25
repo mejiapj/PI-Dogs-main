@@ -1,5 +1,7 @@
-const { Temperament } = require('../db');
+const { Temperament, Dog } = require('../db');
 const axios = require('axios');
+const { conn } = require('../db');
+const sequelize = conn;
 
 async function fetchDataTemperaments() {
   try {
@@ -15,6 +17,7 @@ async function fetchDataTemperaments() {
     if (response.data) {
       const temperaments = extractTemperaments(response.data);
       temperaments.sort((a, b) => a.name.localeCompare(b.name));
+      await deleteExistingTemperaments();
       await fillDbTemperaments(temperaments);
     }
   } catch (error) {
@@ -43,14 +46,39 @@ function extractTemperaments(data) {
   return temperaments;
 }
 
+async function deleteExistingTemperaments() {
+  await Temperament.destroy({ where: {} });
+}
+
 async function fillDbTemperaments(temperaments) {
+  const t = await sequelize.transaction();
+
   try {
-    if (temperaments.length > 0) {
-      await Temperament.bulkCreate(temperaments, {
-        ignoreDuplicates: true,
+    for (const [index, temperament] of temperaments.entries()) {
+      const existingTemperament = await Temperament.findOne({
+        where: { name: temperament.name },
+        transaction: t,
+        include: [{ model: Dog }],
       });
+
+      if (!existingTemperament) {
+        const lastTemperament = await Temperament.findOne({
+          order: [['id', 'DESC']],
+          transaction: t,
+        });
+
+        const newId = lastTemperament ? lastTemperament.id + 1 : index + 1;
+
+        await Temperament.create(
+          { id: newId, name: temperament.name },
+          { transaction: t }
+        );
+      }
     }
+
+    await t.commit();
   } catch (error) {
+    await t.rollback();
     console.log(error);
   }
 }
@@ -79,12 +107,15 @@ const createTemperament = async (req, res, next) => {
 
 const getAllTemperaments = async (req, res, next) => {
   try {
-    const allTemperament = await Temperament.findAll();
+    await fetchDataTemperaments();
+
+    const allTemperament = await Temperament.findAll({
+      order: [['id', 'ASC']],
+    });
+
     return res.status(200).json(allTemperament);
   } catch (error) {
-    return res
-      .status(404)
-      .json({ message: 'No hay Temperamentos en la base de datos' });
+    return res.status(404).json({ message: error.message });
   }
 };
 
