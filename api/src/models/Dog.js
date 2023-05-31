@@ -48,6 +48,11 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      origen: {
+        type: DataTypes.ENUM('API', 'BD'),
+        allowNull: false,
+        defaultValue: 'API',
+      },
     },
     {
       timestamps: false, // Omitir createdAt y updatedAt
