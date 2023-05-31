@@ -5,7 +5,8 @@ const { API_KEY } = process.env;
 
 const createDog = async (req, res, next) => {
   try {
-    const { imagen, nombre, altura, peso, anos_vida, temperaments } = req.body;
+    const { imagen, nombre, altura, peso, anos_vida, origen, temperaments } =
+      req.body;
 
     const existingDog = await Dog.findOne({
       where: { nombre },
@@ -62,6 +63,7 @@ const createDog = async (req, res, next) => {
         altura,
         peso,
         anos_vida,
+        origen,
       }).then(async (createdDog) => {
         await createdDog.setTemperaments(finalTemperaments);
         return res
@@ -75,6 +77,7 @@ const createDog = async (req, res, next) => {
         altura,
         peso,
         anos_vida,
+        origen,
       }).then(() => {
         return res
           .status(201)
@@ -167,6 +170,7 @@ const getDogById = async (req, res) => {
       },
       anos_vida: apiDog.life_span,
       temperament: apiDog.temperament,
+      origen: 'API',
     };
 
     // Buscar en la base de datos
@@ -205,6 +209,7 @@ const getDogById = async (req, res) => {
         altura: dbDog.altura,
         peso: dbDog.peso,
         anos_vida: dbDog.anos_vida,
+        origen: dbDog.origen,
         temperament: temperaments.join(', '),
       };
     }
@@ -251,6 +256,7 @@ const getDogsByName = async (req, res) => {
           metric: apiDog.weight.metric,
         },
         anos_vida: apiDog.life_span,
+        origen: 'API',
         temperament: apiDog.temperament,
       }));
     } catch (apiError) {
@@ -295,6 +301,7 @@ const getDogsByName = async (req, res) => {
       altura: dbDog.altura,
       peso: dbDog.peso,
       anos_vida: dbDog.anos_vida,
+      origen: dbDog.origen,
       temperament: dbDog.temperaments
         .map((temperament) => temperament.name)
         .join(', '),
@@ -335,6 +342,7 @@ const fetchDataDogs = async () => {
           altura: dog.height,
           peso: dog.weight,
           anos_vida: dog.life_span,
+          origen: 'API',
           temperaments: [...new Set(temperaments)],
         };
       });
