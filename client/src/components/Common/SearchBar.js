@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import './SearchBar.css';
 import SearchIcon from '@material-ui/icons/Search';
 
-const SearchBar = () => {
+const SearchBar = ({ onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleInputChange = (event) => {
     setSearchQuery(event.target.value);
   };
 
-  const handleSearch = () => {
-    // Aquí puedes implementar la lógica de búsqueda con el valor de searchQuery
-    // Por ejemplo, puedes llamar a una función que realice la búsqueda de razas de perros por nombre
-    // y actualizar el estado de tu componente principal con los resultados de la búsqueda.
-    console.log('Realizar búsqueda con:', searchQuery);
+  const handleSearch = async () => {
+    try {
+      const response = await axios.get(
+        `https://api.thedogapi.com/v1/breeds/search/?name=${searchQuery}`
+      );
+      const searchResults = response.data;
+      console.log(searchResults);
+      onSearch(searchResults);
+    } catch (error) {
+      console.error('Error searching breeds:', error);
+    }
   };
 
   return (
