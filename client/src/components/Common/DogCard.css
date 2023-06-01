@@ -4,15 +4,19 @@
     max-width: calc(100% / 1);
     display: inline-block;
     text-align: center;
+    vertical-align: top; /* Alineación superior */
+    margin-bottom: 20px; /* Espaciado entre las tarjetas */
   }
 }
 
 /* Estilos para dispositivos medianos (tabletas y portátiles pequeños) */
 @media (min-width: 576px) and (max-width: 991px) {
   .dog-card {
-    max-width: calc(100% / 2.50);
+    max-width: calc(100% / 2.5);
     display: inline-block;
     text-align: center;
+    vertical-align: top; /* Alineación superior */
+    margin-bottom: 20px; /* Espaciado entre las tarjetas */
   }
 }
 
@@ -22,10 +26,10 @@
     max-width: calc(100% / 5);
     display: inline-block;
     text-align: center;
-    margin-right: 10px;
-    /* Espaciado entre las tarjetas */
-    margin-bottom: 20px;
-    /* Ajusta el valor del margen inferior según tu preferencia */
+    margin-right: 10px; /* Margen derecho */
+    margin-left: 10px; /* Margen izquierdo */
+    margin-bottom: 20px; /* Espaciado entre las tarjetas */
+    vertical-align: top; /* Alineación superior */
   }
 }
 
@@ -33,7 +37,6 @@
   width: 100%;
   padding: 20px;
   background-color: #f1f1f1;
-  /* Cambia el color de fondo a un tono más grisado */
   border-radius: 8px;
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
@@ -54,11 +57,10 @@
 
 .dog-card img {
   width: 100%;
-  height: auto;
+  height: 200px;
+  object-fit: cover;
+  object-position: top;
   border-radius: 8px;
-  object-fit: contain;
-  /* Utiliza "contain" en lugar de "cover" para mantener la proporción sin distorsionar */
-  margin-bottom: 10px;
 }
 
 .dog-card h2 {

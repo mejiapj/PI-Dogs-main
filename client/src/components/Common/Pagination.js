@@ -1,5 +1,7 @@
 import React from 'react';
 import './Pagination.css';
+import KeyboardArrowLeftIcon from '@material-ui/icons/KeyboardArrowLeft';
+import KeyboardArrowRightIcon from '@material-ui/icons/KeyboardArrowRight';
 
 const Pagination = ({ currentPage, dogsPerPage, totalDogs, onChangePage }) => {
   const totalPages = Math.ceil(totalDogs / dogsPerPage);
@@ -12,12 +14,26 @@ const Pagination = ({ currentPage, dogsPerPage, totalDogs, onChangePage }) => {
 
   return (
     <div className="pagination">
-      <p>
-        Total results: {totalDogs} | Page: {currentPage} of {totalPages}
-      </p>
       <div className="page-buttons">
-        <button onClick={() => handleClick(currentPage - 1)}>prevPage</button>
-        <button onClick={() => handleClick(currentPage + 1)}>nextPage</button>
+        <button
+          className="prevPage"
+          onClick={() => handleClick(currentPage - 1)}
+        >
+          <KeyboardArrowLeftIcon />
+        </button>
+      </div>
+      <div className="page-info">
+        <p>
+          Total results: {totalDogs} | Page: {currentPage} of {totalPages}
+        </p>
+      </div>
+      <div className="page-buttons">
+        <button
+          className="nextPage"
+          onClick={() => handleClick(currentPage + 1)}
+        >
+          <KeyboardArrowRightIcon />
+        </button>
       </div>
     </div>
   );

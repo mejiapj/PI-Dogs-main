@@ -26,7 +26,6 @@ const HomePage = () => {
       try {
         const response = await fetch('http://localhost:3001/dogs');
         const data = await response.json();
-        // console.log(data);
         setDogs(data);
       } catch (error) {
         console.error('Error fetching dogs:', error);
@@ -42,7 +41,10 @@ const HomePage = () => {
         .filter((dog) => dog.nombre.includes(searchQuery))
         .filter((dog) => {
           if (filterOptions.temperament) {
-            return dog.temperaments.includes(filterOptions.temperament);
+            return (
+              dog.temperaments &&
+              dog.temperaments.includes(filterOptions.temperament)
+            );
           }
           return true;
         })
@@ -55,8 +57,12 @@ const HomePage = () => {
         .sort((a, b) => {
           if (sortOptions === 'alphabetical') {
             return a.nombre.localeCompare(b.nombre);
+          } else if (sortOptions === 'alphabetical-desc') {
+            return b.nombre.localeCompare(a.nombre);
           } else if (sortOptions === 'weight') {
             return parseFloat(a.peso.metric) - parseFloat(b.peso.metric);
+          } else if (sortOptions === 'weight-desc') {
+            return parseFloat(b.peso.metric) - parseFloat(a.peso.metric);
           }
           return 0;
         });
@@ -80,6 +86,14 @@ const HomePage = () => {
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
       />
+      <Pagination
+        currentPage={pagination.currentPage}
+        dogsPerPage={pagination.dogsPerPage}
+        totalDogs={filteredDogs.length}
+        onChangePage={(page) =>
+          setPagination({ ...pagination, currentPage: page })
+        }
+      />
       <FilterOptions
         filterOptions={filterOptions}
         setFilterOptions={setFilterOptions}
@@ -97,15 +111,6 @@ const HomePage = () => {
             onClick={() => handleCardClick(dog)}
           />
         ))}
-
-      <Pagination
-        currentPage={pagination.currentPage}
-        dogsPerPage={pagination.dogsPerPage}
-        totalDogs={filteredDogs.length}
-        onChangePage={(page) =>
-          setPagination({ ...pagination, currentPage: page })
-        }
-      />
     </div>
   );
 };
