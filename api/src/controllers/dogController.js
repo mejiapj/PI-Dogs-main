@@ -225,107 +225,6 @@ const getDogById = async (req, res) => {
   }
 };
 
-const getDogsByName = async (req, res) => {
-  const name = req.query.name;
-  // console.log(name);
-  try {
-    // Buscar en la API
-    let apiDogs = [];
-    try {
-      const apiResponse = await axios.get(
-        `https://api.thedogapi.com/v1/breeds/search?q=${name}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': API_KEY,
-          },
-        }
-      );
-      apiDogs = apiResponse.data.map((apiDog) => ({
-        id: apiDog.id,
-        imagen: {
-          id: apiDog.reference_image_id,
-        },
-        nombre: apiDog.name,
-        altura: {
-          imperial: apiDog.height.imperial,
-          metric: apiDog.height.metric,
-        },
-        peso: {
-          imperial: apiDog.weight.imperial,
-          metric: apiDog.weight.metric,
-        },
-        anos_vida: apiDog.life_span,
-        origen: 'API',
-        temperament: apiDog.temperament,
-      }));
-    } catch (apiError) {
-      console.log(apiError);
-      // Manejar el error de la API específicamente
-      return res
-        .status(500)
-        .json({ message: 'Error al buscar las razas en la API' });
-    }
-
-    // Buscar en la base de datos
-    let dbDogs = [];
-    try {
-      dbDogs = await Dog.findAll({
-        where: {
-          nombre: {
-            [Op.iLike]: `%${name}%`,
-          },
-        },
-        include: [
-          {
-            model: Temperament,
-            attributes: ['name'],
-            through: {
-              attributes: [],
-            },
-          },
-        ],
-      });
-    } catch (dbError) {
-      console.log(dbError);
-      // Manejar el error de la base de datos específicamente
-      return res
-        .status(500)
-        .json({ message: 'Error al buscar las razas en la base de datos' });
-    }
-
-    const modifiedDbDogs = dbDogs.map((dbDog) => ({
-      id: dbDog.id,
-      imagen: dbDog.imagen,
-      nombre: dbDog.nombre,
-      altura: dbDog.altura,
-      peso: dbDog.peso,
-      anos_vida: dbDog.anos_vida,
-      origen: dbDog.origen,
-      temperament: dbDog.temperaments
-        .map((temperament) => temperament.name)
-        .join(', '),
-    }));
-
-    // Combinar y homologar los resultados de la API y la base de datos
-    const dogs = [...apiDogs, ...modifiedDbDogs];
-
-    // Eliminar duplicados
-    const uniqueDogs = dogs.filter((dog, index, self) => {
-      const foundIndex = self.findIndex((d) => d.nombre === dog.nombre);
-      return index === foundIndex;
-    });
-
-    if (uniqueDogs.length === 0) {
-      return res.status(404).json({ message: 'No se encontraron razas' });
-    }
-
-    res.json(uniqueDogs);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Error al buscar las razas' });
-  }
-};
 const fetchDataDogs = async () => {
   try {
     const response = await axios.get('https://api.thedogapi.com/v1/breeds');
@@ -404,6 +303,116 @@ const fetchDataDogs = async () => {
   }
 };
 
+const getDogsByName = async (req, res) => {
+  const name = req.query.name;
+  // console.log(name);
+  try {
+    // Buscar en la API
+    let apiDogs = [];
+    try {
+      const apiResponse = await axios.get(
+        `https://api.thedogapi.com/v1/breeds/search?q=${name}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY,
+          },
+        }
+      );
+
+      apiDogs = apiResponse.data.map((apiDog) => {
+        let imagen = null;
+        if (apiDog.reference_image_id !== undefined) {
+          imagen = {
+            id: apiDog.reference_image_id,
+            url: `https://cdn2.thedogapi.com/images/${apiDog.reference_image_id}.jpg`,
+          };
+        }
+
+        return {
+          id: apiDog.id,
+          imagen,
+          nombre: apiDog.name,
+          altura: {
+            imperial: apiDog.height.imperial,
+            metric: apiDog.height.metric,
+          },
+          peso: {
+            imperial: apiDog.weight.imperial,
+            metric: apiDog.weight.metric,
+          },
+          anos_vida: apiDog.life_span,
+          origen: 'API',
+          temperaments: apiDog.temperament,
+        };
+      });
+    } catch (apiError) {
+      console.log(apiError);
+      // Manejar el error de la API específicamente
+      return res
+        .status(500)
+        .json({ message: 'Error al buscar las razas en la API' });
+    }
+
+    // Buscar en la base de datos
+    let dbDogs = [];
+    try {
+      dbDogs = await Dog.findAll({
+        where: {
+          nombre: {
+            [Op.iLike]: `%${name}%`,
+          },
+        },
+        include: [
+          {
+            model: Temperament,
+            attributes: ['name'],
+            through: {
+              attributes: [],
+            },
+          },
+        ],
+      });
+    } catch (dbError) {
+      console.log(dbError);
+      // Manejar el error de la base de datos específicamente
+      return res
+        .status(500)
+        .json({ message: 'Error al buscar las razas en la base de datos' });
+    }
+
+    const modifiedDbDogs = dbDogs.map((dbDog) => ({
+      id: dbDog.id,
+      imagen: dbDog.imagen,
+      nombre: dbDog.nombre,
+      altura: dbDog.altura,
+      peso: dbDog.peso,
+      anos_vida: dbDog.anos_vida,
+      origen: dbDog.origen,
+      temperaments: dbDog.temperaments
+        .map((temperament) => temperament.name)
+        .join(', '),
+    }));
+
+    // Combinar y homologar los resultados de la API y la base de datos
+    const dogs = [...apiDogs, ...modifiedDbDogs];
+
+    // Eliminar duplicados
+    const uniqueDogs = dogs.filter((dog, index, self) => {
+      const foundIndex = self.findIndex((d) => d.nombre === dog.nombre);
+      return index === foundIndex;
+    });
+
+    if (uniqueDogs.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron razas' });
+    }
+
+    res.json(uniqueDogs);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Error al buscar las razas' });
+  }
+};
 module.exports = {
   createDog,
   getAllDogs,

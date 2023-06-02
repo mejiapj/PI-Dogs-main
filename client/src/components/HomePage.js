@@ -9,7 +9,6 @@ import DogCard from './Common/DogCard';
 const HomePage = () => {
   const history = useHistory();
   const [dogs, setDogs] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [filteredDogs, setFilteredDogs] = useState([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -38,7 +37,6 @@ const HomePage = () => {
   useEffect(() => {
     const filterAndSortDogs = () => {
       const filteredAndSortedDogs = dogs
-        .filter((dog) => dog.nombre.includes(searchQuery))
         .filter((dog) => {
           if (filterOptions.temperament) {
             return (
@@ -71,7 +69,7 @@ const HomePage = () => {
     };
 
     filterAndSortDogs();
-  }, [dogs, searchQuery, filterOptions, sortOptions]);
+  }, [dogs, filterOptions, sortOptions]);
 
   const handleCardClick = (dog) => {
     history.push({
@@ -80,12 +78,13 @@ const HomePage = () => {
     });
   };
 
+  const handleSearch = (results) => {
+    setFilteredDogs(results);
+  };
+
   return (
     <div>
-      <SearchBar
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-      />
+      <SearchBar onSearch={handleSearch} />
       <Pagination
         currentPage={pagination.currentPage}
         dogsPerPage={pagination.dogsPerPage}

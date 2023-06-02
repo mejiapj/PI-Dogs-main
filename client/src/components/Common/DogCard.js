@@ -8,16 +8,7 @@ const DogCard = ({ dog, onClick }) => {
   return (
     <div className="dog-card" onClick={onClick}>
       {imagen && imagen.url && (
-        <img
-          src={imagen.url}
-          alt={nombre}
-          width="200"
-          height="150"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = 'placeholder.jpg'; // Ruta de la imagen de reemplazo en caso de error
-          }}
-        />
+        <img src={imagen.url} alt={nombre} width="200" height="150" />
       )}
 
       <h2>{nombre}</h2>
