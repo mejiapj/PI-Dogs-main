@@ -321,6 +321,7 @@ const getDogsByName = async (req, res) => {
         }
       );
 
+      /*
       apiDogs = apiResponse.data.map((apiDog) => {
         let imagen = null;
         if (apiDog.reference_image_id !== undefined) {
@@ -328,6 +329,52 @@ const getDogsByName = async (req, res) => {
             id: apiDog.reference_image_id,
             url: `https://cdn2.thedogapi.com/images/${apiDog.reference_image_id}.jpg`,
           };
+        }
+
+        return {
+          id: apiDog.id,
+          imagen,
+          nombre: apiDog.name,
+          altura: {
+            imperial: apiDog.height.imperial,
+            metric: apiDog.height.metric,
+          },
+          peso: {
+            imperial: apiDog.weight.imperial,
+            metric: apiDog.weight.metric,
+          },
+          anos_vida: apiDog.life_span,
+          origen: 'API',
+          temperaments: apiDog.temperament,
+        };
+      });
+*/
+
+      const checkImageUrl = async (url) => {
+        try {
+          const response = await fetch(url, { method: 'HEAD' });
+          return response.ok;
+        } catch (error) {
+          console.error('Error checking image URL:', error);
+          return false;
+        }
+      };
+
+      apiDogs = apiResponse.data.map(async (apiDog) => {
+        let imagen = null;
+        if (apiDog.reference_image_id !== undefined) {
+          const extensions = ['.jpg', '.png', '.bmp'];
+          for (const extension of extensions) {
+            const imageUrl = `https://cdn2.thedogapi.com/images/${apiDog.reference_image_id}${extension}`;
+            const isValidImageUrl = await checkImageUrl(imageUrl);
+            if (isValidImageUrl) {
+              imagen = {
+                id: apiDog.reference_image_id,
+                url: imageUrl,
+              };
+              break;
+            }
+          }
         }
 
         return {
