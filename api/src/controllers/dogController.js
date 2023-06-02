@@ -321,79 +321,50 @@ const getDogsByName = async (req, res) => {
         }
       );
 
-      /*
-      apiDogs = apiResponse.data.map((apiDog) => {
-        let imagen = null;
-        if (apiDog.reference_image_id !== undefined) {
-          imagen = {
-            id: apiDog.reference_image_id,
-            url: `https://cdn2.thedogapi.com/images/${apiDog.reference_image_id}.jpg`,
-          };
-        }
+      apiDogs = await Promise.all(
+        apiResponse.data.map(async (apiDog) => {
+          let imagen = null;
+          if (apiDog.reference_image_id !== undefined) {
+            const extensions = ['.jpg', '.png', '.svg', '.bmp', '.webp'];
+            const getImage = async () => {
+              for (const extension of extensions) {
+                const url = `https://cdn2.thedogapi.com/images/${apiDog.reference_image_id}${extension}`;
+                try {
+                  const response = await axios.get(url);
+                  if (response.status === 200) {
+                    imagen = {
+                      id: apiDog.reference_image_id,
+                      url: url,
+                    };
+                    break;
+                  }
+                } catch (error) {
+                  // La URL no es válida, se intenta con la siguiente extensión
+                }
+              }
+            };
 
-        return {
-          id: apiDog.id,
-          imagen,
-          nombre: apiDog.name,
-          altura: {
-            imperial: apiDog.height.imperial,
-            metric: apiDog.height.metric,
-          },
-          peso: {
-            imperial: apiDog.weight.imperial,
-            metric: apiDog.weight.metric,
-          },
-          anos_vida: apiDog.life_span,
-          origen: 'API',
-          temperaments: apiDog.temperament,
-        };
-      });
-*/
-
-      const checkImageUrl = async (url) => {
-        try {
-          const response = await fetch(url, { method: 'HEAD' });
-          return response.ok;
-        } catch (error) {
-          console.error('Error checking image URL:', error);
-          return false;
-        }
-      };
-
-      apiDogs = apiResponse.data.map(async (apiDog) => {
-        let imagen = null;
-        if (apiDog.reference_image_id !== undefined) {
-          const extensions = ['.jpg', '.png', '.bmp'];
-          for (const extension of extensions) {
-            const imageUrl = `https://cdn2.thedogapi.com/images/${apiDog.reference_image_id}${extension}`;
-            const isValidImageUrl = await checkImageUrl(imageUrl);
-            if (isValidImageUrl) {
-              imagen = {
-                id: apiDog.reference_image_id,
-                url: imageUrl,
-              };
-              break;
-            }
+            await getImage();
           }
-        }
 
-        return {
-          id: apiDog.id,
-          imagen,
-          nombre: apiDog.name,
-          altura: {
-            imperial: apiDog.height.imperial,
-            metric: apiDog.height.metric,
-          },
-          peso: {
-            imperial: apiDog.weight.imperial,
-            metric: apiDog.weight.metric,
-          },
-          anos_vida: apiDog.life_span,
-          origen: 'API',
-          temperaments: apiDog.temperament,
-        };
-      });
+          return {
+            id: apiDog.id,
+            imagen,
+            nombre: apiDog.name,
+            altura: {
+              imperial: apiDog.height.imperial,
+              metric: apiDog.height.metric,
+            },
+            peso: {
+              imperial: apiDog.weight.imperial,
+              metric: apiDog.weight.metric,
+            },
+            anos_vida: apiDog.life_span,
+            origen: 'API',
+            temperaments: apiDog.temperament,
+          };
+        })
+      );
     } catch (apiError) {
       console.log(apiError);
       // Manejar el error de la API específicamente
@@ -436,31 +407,29 @@ const getDogsByName = async (req, res) => {
       altura: dbDog.altura,
       peso: dbDog.peso,
       anos_vida: dbDog.anos_vida,
-      origen: dbDog.origen,
-      temperaments: dbDog.temperaments
-        .map((temperament) => temperament.name)
-        .join(', '),
+      origen: 'Base de datos',
+      temperaments: dbDog.temperaments.map((temp) => temp.name),
     }));
 
-    // Combinar y homologar los resultados de la API y la base de datos
-    const dogs = [...apiDogs, ...modifiedDbDogs];
+    // Combinar perros de la API y de la base de datos
+    const allDogs = [...apiDogs, ...modifiedDbDogs];
 
-    // Eliminar duplicados
-    const uniqueDogs = dogs.filter((dog, index, self) => {
-      const foundIndex = self.findIndex((d) => d.nombre === dog.nombre);
+    // Eliminar perros duplicados por ID
+    const uniqueDogs = allDogs.filter((dog, index, self) => {
+      const foundIndex = self.findIndex((d) => d.id === dog.id);
       return index === foundIndex;
     });
 
-    if (uniqueDogs.length === 0) {
-      return res.status(404).json({ message: 'No se encontraron razas' });
-    }
-
-    res.json(uniqueDogs);
+    return res.json(uniqueDogs);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: 'Error al buscar las razas' });
+    // Manejar cualquier otro error no específico
+    return res
+      .status(500)
+      .json({ message: 'Error al buscar las razas de perros' });
   }
 };
+
 module.exports = {
   createDog,
   getAllDogs,
