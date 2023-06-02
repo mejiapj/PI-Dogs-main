@@ -236,6 +236,7 @@ const fetchDataDogs = async () => {
           : [];
 
         return {
+          id: dog.id,
           imagen: dog.image,
           nombre: dog.name,
           altura: dog.height,
