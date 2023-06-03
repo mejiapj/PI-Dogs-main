@@ -5,6 +5,7 @@ import Pagination from './Common/Pagination';
 import FilterOptions from './Common/FilterOptions';
 import SortOptions from './Common/SortOptions';
 import DogCard from './Common/DogCard';
+import './HomePage.css';
 
 const HomePage = () => {
   const history = useHistory();
@@ -82,6 +83,10 @@ const HomePage = () => {
     setFilteredDogs(results);
   };
 
+  const handleCreateDog = () => {
+    history.push('/create-dog');
+  };
+
   return (
     <div>
       <SearchBar onSearch={handleSearch} />
@@ -93,11 +98,19 @@ const HomePage = () => {
           setPagination({ ...pagination, currentPage: page })
         }
       />
-      <FilterOptions
-        filterOptions={filterOptions}
-        setFilterOptions={setFilterOptions}
-      />
-      <SortOptions sortOptions={sortOptions} setSortOptions={setSortOptions} />
+      <div className="filter-sort-container">
+        <FilterOptions
+          filterOptions={filterOptions}
+          setFilterOptions={setFilterOptions}
+        />
+        <SortOptions
+          sortOptions={sortOptions}
+          setSortOptions={setSortOptions}
+        />
+        <button className="create-dog-button" onClick={handleCreateDog}>
+          Create Dog
+        </button>
+      </div>
       {filteredDogs
         .slice(
           (pagination.currentPage - 1) * pagination.dogsPerPage,

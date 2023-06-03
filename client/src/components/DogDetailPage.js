@@ -16,7 +16,11 @@ const DogDetailPage = (props) => {
     <div className="dog-detail">
       <h1>{nombre}</h1>
       <div>
-        <img src={imagen.url} alt={nombre} width="300" height="200" />
+        {imagen && imagen.url ? (
+          <img src={imagen.url} alt={nombre} width="300" height="200" />
+        ) : (
+          <p>No hay imagen disponible</p>
+        )}
       </div>
       <div>
         <h2>ID: {id}</h2>

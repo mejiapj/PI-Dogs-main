@@ -1,4 +1,5 @@
 const { Dog, Temperament } = require('../db');
+
 const axios = require('axios');
 const { Op } = require('sequelize');
 const { API_KEY } = process.env;
