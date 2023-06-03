@@ -1,4 +1,5 @@
 const { Dog, Temperament } = require('../db');
+
 const axios = require('axios');
 const { Op } = require('sequelize');
 const { API_KEY } = process.env;
@@ -17,60 +18,6 @@ const createDog = async (req, res, next) => {
         .status(500)
         .json({ message: 'El perro ya existe en la base de datos' });
     }
-
-    const apiDogs = await axios.get(
-      `https://api.thedogapi.com/v1/breeds/search?q=${nombre}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': API_KEY,
-        },
-      }
-    );
-
-    const existingApiDog = apiDogs.data.find((dog) => dog.name === nombre);
-    if (existingApiDog) {
-      return res.status(500).json({
-        message: 'El perro ya existe en la API',
-      });
-    }
-
-    const getAllBreeds = async () => {
-      const response = await axios.get('https://api.thedogapi.com/v1/breeds', {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': API_KEY,
-        },
-      });
-      return response.data;
-    };
-
-    const getRandomBreed = (breeds) => {
-      // Obtener los valores de id de la respuesta
-      const ids = breeds.map((breed) => breed.id);
-
-      // Ordenar el array de ids
-      ids.sort((a, b) => a - b);
-
-      // Calcular el valor mínimo y máximo de id
-      const minValue = Math.min(...ids);
-      const maxValue = Math.max(...ids);
-
-      let randomIndex;
-
-      do {
-        randomIndex = Math.floor(Math.random() * breeds.length * (10 ^ 3));
-      } while (randomIndex >= minValue && randomIndex <= maxValue);
-
-      return randomIndex;
-    };
-
-    const generateRandomBreed = async () => {
-      const breeds = await getAllBreeds();
-
-      const newBreed = getRandomBreed(breeds);
-      return newBreed;
-    };
 
     let uniqueTemperaments = [];
 
@@ -111,39 +58,36 @@ const createDog = async (req, res, next) => {
 
       const finalTemperaments = existingTemperaments;
 
-      const newBreed = await generateRandomBreed();
-      const createdDog = await Dog.create({
-        id: newBreed,
-        imagen,
-        nombre,
-        altura,
-        peso,
-        anos_vida,
-        origen,
-      });
-      await createdDog.setTemperaments(finalTemperaments);
-
-      return res
-        .status(201)
-        .json({ message: 'El perro fue creado satisfactoriamente' });
-    } else {
-      const newBreed = await generateRandomBreed();
       await Dog.create({
-        id: newBreed,
         imagen,
         nombre,
         altura,
         peso,
         anos_vida,
         origen,
+      }).then(async (createdDog) => {
+        await createdDog.setTemperaments(finalTemperaments);
+        return res
+          .status(201)
+          .json({ message: 'El perro fue creado satisfactoriamente' });
       });
-
-      return res
-        .status(201)
-        .json({ message: 'El perro fue creado satisfactoriamente' });
+    } else {
+      await Dog.create({
+        imagen,
+        nombre,
+        altura,
+        peso,
+        anos_vida,
+        origen,
+      }).then(() => {
+        return res
+          .status(201)
+          .json({ message: 'El perro fue creado satisfactoriamente' });
+      });
     }
   } catch (error) {
-    next(error);
+    console.error(error);
+    return res.status(500).json({ message: 'Error al crear el perro' });
   }
 };
 

@@ -1,16 +1,13 @@
 const { DataTypes } = require('sequelize');
-// Exportamos una funcion que define el modelo
-// Luego le injectamos la conexion a sequelize.
+
 module.exports = (sequelize) => {
-  // defino el modelo
-  sequelize.define(
+  const Dog = sequelize.define(
     'dog',
     {
       id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
-        defaultValue: 1000, // Establecer el valor inicial deseado para el ID autoincremental
       },
       imagen: {
         type: DataTypes.JSONB,
@@ -23,30 +20,27 @@ module.exports = (sequelize) => {
           this.setDataValue('imagen', JSON.stringify(value));
         },
       },
-
       nombre: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-
       altura: {
         type: DataTypes.JSONB,
         allowNull: true,
-        get: function () {
+        get() {
           return JSON.parse(this.getDataValue('altura'));
         },
-        set: function (value) {
+        set(value) {
           this.setDataValue('altura', JSON.stringify(value));
         },
       },
-
       peso: {
         type: DataTypes.JSONB,
         allowNull: true,
-        get: function () {
+        get() {
           return JSON.parse(this.getDataValue('peso'));
         },
-        set: function (value) {
+        set(value) {
           this.setDataValue('peso', JSON.stringify(value));
         },
       },
@@ -61,7 +55,13 @@ module.exports = (sequelize) => {
       },
     },
     {
-      timestamps: false, // Omitir createdAt y updatedAt
+      timestamps: false,
     }
   );
+
+  Dog.afterSync((options) => {
+    return Dog.sequelize.query('ALTER SEQUENCE dogs_id_seq RESTART WITH 1000;');
+  });
+
+  return Dog;
 };

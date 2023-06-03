@@ -59,9 +59,5 @@ module.exports = (sequelize) => {
     }
   );
 
-  Dog.afterSync((options) => {
-    return Dog.sequelize.query('ALTER SEQUENCE dogs_id_seq RESTART WITH 1000;');
-  });
-
   return Dog;
 };
