@@ -37,8 +37,9 @@ const shouldForceSyncDB = isDevelopment && FORCE_SYNC_DB === 'true';
 conn.sync({ force: shouldForceSyncDB }).then(async () => {
   try {
     if (shouldForceSyncDB) {
-      await fetchDataTemperaments();
+      /*       await fetchDataTemperaments();
       await fetchDataDogs();
+*/
     }
     server.listen(PORT, () => {
       console.log(`Server listening at ${PORT}`);
