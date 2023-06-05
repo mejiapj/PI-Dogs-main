@@ -1,9 +1,12 @@
-import { combineReducers } from 'redux';
+// Importa los reductores necesarios
 import dogReducer from './dogReducer';
 import temperamentReducer from './temperamentReducer';
 
+// Combina los reductores en un solo reductor raíz
+import { combineReducers } from 'redux';
+
 const rootReducer = combineReducers({
-  dog: dogReducer,
+  dogs: dogReducer,
   temperament: temperamentReducer,
 });
 

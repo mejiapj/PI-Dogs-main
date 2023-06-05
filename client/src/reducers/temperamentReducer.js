@@ -1,13 +1,21 @@
-// temperamentReducer.js
+// Define los tipos de acciones
+export const SET_TEMPERAMENT_FILTER = 'SET_TEMPERAMENT_FILTER';
 
-const initialState = null; // Estado inicial nulo o con algún valor por defecto
+// Define el estado inicial del reductor
+const initialState = {
+  temperamentFilter: '',
+};
 
+// Define el reductor
 const temperamentReducer = (state = initialState, action) => {
   switch (action.type) {
-    // Definir los casos para las acciones específicas
-    // ...
+    case SET_TEMPERAMENT_FILTER:
+      return {
+        ...state,
+        temperamentFilter: action.payload,
+      };
     default:
-      return state; // Devolver el estado actual por defecto
+      return state;
   }
 };
 

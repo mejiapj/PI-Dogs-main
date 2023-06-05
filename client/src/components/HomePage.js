@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
 import SearchBar from './Common/SearchBar';
 import Pagination from './Common/Pagination';
 import FilterOptions from './Common/FilterOptions';
@@ -7,50 +8,37 @@ import SortOptions from './Common/SortOptions';
 import DogCard from './Common/DogCard';
 import './HomePage.css';
 
+import {
+  fetchDogs,
+  setFilteredDogs,
+  setPagination,
+  setSortOptions,
+} from '../actions/dogsActions';
+
 const HomePage = () => {
   const history = useHistory();
-  const [dogs, setDogs] = useState([]);
-  const [filteredDogs, setFilteredDogs] = useState([]);
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    dogsPerPage: 8,
-  });
-  const [filterOptions, setFilterOptions] = useState({
-    temperament: '',
-    source: '',
-  });
-  const [sortOptions, setSortOptions] = useState('');
+  const dispatch = useDispatch();
+  const dogs = useSelector((state) => state.dogs.dogs);
+  const temperamentFilter = useSelector(
+    (state) => state.temperament.temperamentFilter
+  );
+  const filteredDogs = useSelector((state) => state.dogs.filteredDogs);
+  const pagination = useSelector((state) => state.dogs.pagination);
+  const sortOptions = useSelector((state) => state.dogs.sortOptions);
 
   useEffect(() => {
-    const fetchDogs = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/dogs');
-        const data = await response.json();
-        setDogs(data);
-      } catch (error) {
-        console.error('Error fetching dogs:', error);
-      }
-    };
-
-    fetchDogs();
-  }, []);
+    dispatch(fetchDogs());
+  }, [dispatch]);
 
   useEffect(() => {
     const filterAndSortDogs = () => {
       if (Array.isArray(dogs)) {
         const filteredAndSortedDogs = dogs
           .filter((dog) => {
-            if (filterOptions.temperament) {
+            if (temperamentFilter) {
               return (
-                dog.temperaments &&
-                dog.temperaments.includes(filterOptions.temperament)
+                dog.temperaments && dog.temperaments.includes(temperamentFilter)
               );
-            }
-            return true;
-          })
-          .filter((dog) => {
-            if (filterOptions.source) {
-              return dog.origen === filterOptions.source;
             }
             return true;
           })
@@ -67,12 +55,12 @@ const HomePage = () => {
             return 0;
           });
 
-        setFilteredDogs(filteredAndSortedDogs);
+        dispatch(setFilteredDogs(filteredAndSortedDogs));
       }
     };
 
     filterAndSortDogs();
-  }, [dogs, filterOptions, sortOptions]);
+  }, [dogs, temperamentFilter, sortOptions, dispatch]);
 
   const handleCardClick = (dog) => {
     history.push({
@@ -82,11 +70,15 @@ const HomePage = () => {
   };
 
   const handleSearch = (results) => {
-    setFilteredDogs(results);
+    dispatch(setFilteredDogs(results));
   };
 
   const handleCreateDog = () => {
     history.push('/create-dog');
+  };
+
+  const handleChangePage = (page) => {
+    dispatch(setPagination({ ...pagination, currentPage: page }));
   };
 
   return (
@@ -96,19 +88,11 @@ const HomePage = () => {
         currentPage={pagination.currentPage}
         dogsPerPage={pagination.dogsPerPage}
         totalDogs={filteredDogs.length}
-        onChangePage={(page) =>
-          setPagination({ ...pagination, currentPage: page })
-        }
+        onChangePage={handleChangePage}
       />
       <div className="filter-sort-container">
-        <FilterOptions
-          filterOptions={filterOptions}
-          setFilterOptions={setFilterOptions}
-        />
-        <SortOptions
-          sortOptions={sortOptions}
-          setSortOptions={setSortOptions}
-        />
+        <FilterOptions />
+        <SortOptions />
         <button className="create-dog-button" onClick={handleCreateDog}>
           Create Dog
         </button>

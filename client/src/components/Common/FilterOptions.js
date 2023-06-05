@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './FilterOptions.css';
+import { useDispatch, useSelector } from 'react-redux';
+import { setFilterOptions } from '../../actions/dogsActions';
 
-const FilterOptions = ({ filterOptions, setFilterOptions }) => {
+const FilterOptions = () => {
+  const dispatch = useDispatch();
+  const filterOptions = useSelector((state) => state.filterOptions);
   const [temperaments, setTemperaments] = useState([]);
 
   useEffect(() => {
@@ -20,11 +24,13 @@ const FilterOptions = ({ filterOptions, setFilterOptions }) => {
   }, []);
 
   const handleTemperamentChange = (e) => {
-    setFilterOptions({ ...filterOptions, temperament: e.target.value });
+    dispatch(
+      setFilterOptions({ ...filterOptions, temperament: e.target.value })
+    );
   };
 
   const handleSourceChange = (e) => {
-    setFilterOptions({ ...filterOptions, source: e.target.value });
+    dispatch(setFilterOptions({ ...filterOptions, source: e.target.value }));
   };
 
   return (
@@ -32,7 +38,7 @@ const FilterOptions = ({ filterOptions, setFilterOptions }) => {
       <label htmlFor="temperament-select">Temperament:</label>
       <select
         id="temperament-select"
-        value={filterOptions.temperament}
+        value={filterOptions?.temperament || ''}
         onChange={handleTemperamentChange}
       >
         <option value="">All</option>
@@ -46,12 +52,12 @@ const FilterOptions = ({ filterOptions, setFilterOptions }) => {
       <label htmlFor="source-select">Source:</label>
       <select
         id="source-select"
-        value={filterOptions.source}
+        value={filterOptions?.source || ''}
         onChange={handleSourceChange}
       >
         <option value="">All</option>
         <option value="API">API</option>
-        <option value="DB">DB</option>
+        <option value="BD">DB</option>
       </select>
     </div>
   );
