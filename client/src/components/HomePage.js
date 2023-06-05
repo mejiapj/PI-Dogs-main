@@ -37,36 +37,38 @@ const HomePage = () => {
 
   useEffect(() => {
     const filterAndSortDogs = () => {
-      const filteredAndSortedDogs = dogs
-        .filter((dog) => {
-          if (filterOptions.temperament) {
-            return (
-              dog.temperaments &&
-              dog.temperaments.includes(filterOptions.temperament)
-            );
-          }
-          return true;
-        })
-        .filter((dog) => {
-          if (filterOptions.source) {
-            return dog.origen === filterOptions.source;
-          }
-          return true;
-        })
-        .sort((a, b) => {
-          if (sortOptions === 'alphabetical') {
-            return a.nombre.localeCompare(b.nombre);
-          } else if (sortOptions === 'alphabetical-desc') {
-            return b.nombre.localeCompare(a.nombre);
-          } else if (sortOptions === 'weight') {
-            return parseFloat(a.peso.metric) - parseFloat(b.peso.metric);
-          } else if (sortOptions === 'weight-desc') {
-            return parseFloat(b.peso.metric) - parseFloat(a.peso.metric);
-          }
-          return 0;
-        });
+      if (Array.isArray(dogs)) {
+        const filteredAndSortedDogs = dogs
+          .filter((dog) => {
+            if (filterOptions.temperament) {
+              return (
+                dog.temperaments &&
+                dog.temperaments.includes(filterOptions.temperament)
+              );
+            }
+            return true;
+          })
+          .filter((dog) => {
+            if (filterOptions.source) {
+              return dog.origen === filterOptions.source;
+            }
+            return true;
+          })
+          .sort((a, b) => {
+            if (sortOptions === 'alphabetical') {
+              return a.nombre.localeCompare(b.nombre);
+            } else if (sortOptions === 'alphabetical-desc') {
+              return b.nombre.localeCompare(a.nombre);
+            } else if (sortOptions === 'weight') {
+              return parseFloat(a.peso.metric) - parseFloat(b.peso.metric);
+            } else if (sortOptions === 'weight-desc') {
+              return parseFloat(b.peso.metric) - parseFloat(a.peso.metric);
+            }
+            return 0;
+          });
 
-      setFilteredDogs(filteredAndSortedDogs);
+        setFilteredDogs(filteredAndSortedDogs);
+      }
     };
 
     filterAndSortDogs();

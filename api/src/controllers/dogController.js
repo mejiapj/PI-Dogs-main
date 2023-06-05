@@ -18,6 +18,13 @@ const createDog = async (req, res, next) => {
         .json({ message: 'El perro ya existe en la base de datos' });
     }
 
+    // Obtener el último registro de la tabla dogs
+    const lastDog = await Dog.findOne({
+      order: [['id', 'DESC']],
+    });
+
+    const lastId = lastDog ? lastDog.id : null;
+
     const apiDogs = await axios.get(
       `https://api.thedogapi.com/v1/breeds/search?q=${nombre}`,
       {
@@ -52,15 +59,17 @@ const createDog = async (req, res, next) => {
       // Ordenar el array de ids
       ids.sort((a, b) => a - b);
 
-      // Calcular el valor mínimo y máximo de id
-      const minValue = Math.min(...ids);
+      // Calcular el valor máximo de id
       const maxValue = Math.max(...ids);
 
       let randomIndex;
 
-      do {
-        randomIndex = Math.floor(Math.random() * breeds.length * (10 ^ 3));
-      } while (randomIndex >= minValue && randomIndex <= maxValue);
+      let newlastId = lastId;
+      if (!lastId || lastId < Math.max(maxValue, ids.length) * 10) {
+        newlastId = Math.max(maxValue, ids.length) * 10;
+      }
+
+      randomIndex = newlastId + 1;
 
       return randomIndex;
     };
@@ -147,7 +156,7 @@ const createDog = async (req, res, next) => {
   }
 };
 
-const getAllDogs = async (req, res, next) => {
+const xxgetAllDogs = async (req, res, next) => {
   try {
     const allDogs = await Dog.findAll({
       include: [
@@ -464,7 +473,102 @@ const getDogsByName = async (req, res) => {
       altura: dbDog.altura,
       peso: dbDog.peso,
       anos_vida: dbDog.anos_vida,
-      origen: 'Base de datos',
+      origen: 'BD',
+      temperaments: dbDog.temperaments.map((temp) => temp.name),
+    }));
+
+    // Combinar perros de la API y de la base de datos
+    const allDogs = [...apiDogs, ...modifiedDbDogs];
+
+    // Eliminar perros duplicados por ID
+    const uniqueDogs = allDogs.filter((dog, index, self) => {
+      const foundIndex = self.findIndex((d) => d.id === dog.id);
+      return index === foundIndex;
+    });
+
+    return res.json(uniqueDogs);
+  } catch (error) {
+    console.log(error);
+    // Manejar cualquier otro error no específico
+    return res
+      .status(500)
+      .json({ message: 'Error al buscar las razas de perros' });
+  }
+};
+//-----------------------------------------------------------------
+const getAllDogs = async (req, res, next) => {
+  const name = req.query.name;
+  // console.log(name);
+  try {
+    // Buscar en la API
+    let apiDogs = [];
+    try {
+      const apiResponse = await axios.get(
+        `https://api.thedogapi.com/v1/breeds`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY,
+          },
+        }
+      );
+
+      apiDogs = await Promise.all(
+        apiResponse.data.map(async (apiDog) => {
+          const temperaments = apiDog.temperament
+            ? apiDog.temperament.split(',').map((temp) => temp.trim())
+            : [];
+
+          return {
+            id: apiDog.id,
+            imagen: apiDog.image,
+            nombre: apiDog.name,
+            altura: apiDog.height,
+            peso: apiDog.weight,
+            anos_vida: apiDog.life_span,
+            origen: 'API',
+            temperaments: [...new Set(temperaments)],
+          };
+        })
+      );
+    } catch (apiError) {
+      console.log(apiError);
+      // Manejar el error de la API específicamente
+      return res
+        .status(500)
+        .json({ message: 'Error al buscar las razas en la API' });
+    }
+
+    // Buscar en la base de datos
+    let dbDogs = [];
+    try {
+      dbDogs = await Dog.findAll({
+        include: [
+          {
+            model: Temperament,
+            attributes: ['name'],
+            through: {
+              attributes: [],
+            },
+          },
+        ],
+      });
+    } catch (dbError) {
+      console.log(dbError);
+      // Manejar el error de la base de datos específicamente
+      return res
+        .status(500)
+        .json({ message: 'Error al buscar las razas en la base de datos' });
+    }
+
+    const modifiedDbDogs = dbDogs.map((dbDog) => ({
+      id: dbDog.id,
+      imagen: dbDog.imagen,
+      nombre: dbDog.nombre,
+      altura: dbDog.altura,
+      peso: dbDog.peso,
+      anos_vida: dbDog.anos_vida,
+      origen: 'BD',
       temperaments: dbDog.temperaments.map((temp) => temp.name),
     }));
 

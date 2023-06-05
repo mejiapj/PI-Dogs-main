@@ -51,7 +51,7 @@ module.exports = (sequelize) => {
       origen: {
         type: DataTypes.ENUM('API', 'BD'),
         allowNull: false,
-        defaultValue: 'API',
+        defaultValue: 'BD',
       },
     },
     {
