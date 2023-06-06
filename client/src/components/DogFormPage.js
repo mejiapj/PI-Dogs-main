@@ -18,6 +18,7 @@ const DogFormPage = () => {
   });
 
   const [temperamentos, setTemperamentos] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchTemperamentos = async () => {
@@ -45,11 +46,134 @@ const DogFormPage = () => {
     setDogForm({ ...dogForm, temperamentos: selectedTemperamentos });
   };
 
+  const validateForm = () => {
+    const {
+      imagenUrl,
+      nombre,
+      alturaMinima,
+      alturaMaxima,
+      pesoMinimo,
+      pesoMaximo,
+      anosVida,
+      temperamentos,
+    } = dogForm;
+
+    // Validación de la URL
+    const urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
+    if (!urlRegex.test(imagenUrl)) {
+      setError('La URL de la imagen no es válida');
+      setTimeout(() => {
+        setError('');
+      }, 5000); // Ocultar el mensaje de error después de 5 segundos
+      focusOnErrorField('imagenUrl');
+      return false;
+    }
+
+    // Validación del nombre (no debe contener números)
+    const nameRegex = /^[a-zA-Z ]*$/;
+    if (!nameRegex.test(nombre)) {
+      setError('El nombre no puede contener números');
+      setTimeout(() => {
+        setError('');
+      }, 5000);
+      focusOnErrorField('nombre');
+      return false;
+    }
+
+    // Validación de la altura mínima y máxima
+    if (
+      Number(alturaMinima) > Number(alturaMaxima) ||
+      Number(alturaMinima) <= 0 ||
+      Number(alturaMaxima) <= 0
+    ) {
+      setError(
+        'La altura mínima debe ser menor que la altura máxima y ambos valores deben ser mayores a cero'
+      );
+      setTimeout(() => {
+        setError('');
+      }, 5000);
+      focusOnErrorField('alturaMinima');
+      return false;
+    }
+
+    // Validación del peso mínimo y máximo
+    if (
+      Number(pesoMinimo) > Number(pesoMaximo) ||
+      Number(pesoMinimo) <= 0 ||
+      Number(pesoMaximo) <= 0
+    ) {
+      setError(
+        'El peso mínimo debe ser menor que el peso máximo y ambos valores deben ser mayores a cero'
+      );
+      setTimeout(() => {
+        setError('');
+      }, 5000);
+      focusOnErrorField('pesoMinimo');
+      return false;
+    }
+
+    // Validación de los años de vida
+    const anosVidaPattern = /^(\d+-\d+|\d+)$/;
+
+    if (!anosVidaPattern.test(anosVida)) {
+      setError(
+        'El formato de los años de vida es inválido. Debe ser en el formato: número-número (ejemplo: 1-10) o un solo número mayor a cero'
+      );
+      setTimeout(() => {
+        setError('');
+      }, 5000);
+      focusOnErrorField('anosVida');
+      return false;
+    }
+
+    if (anosVida.includes('-')) {
+      const [minAnosVida, maxAnosVida] = anosVida.split('-');
+      if (parseInt(minAnosVida) > parseInt(maxAnosVida)) {
+        setError(
+          'El primer número de los años de vida no puede ser mayor al segundo número'
+        );
+        setTimeout(() => {
+          setError('');
+        }, 5000);
+        focusOnErrorField('anosVida');
+        return false;
+      }
+    } else {
+      if (parseInt(anosVida) <= 0) {
+        setError('El número de años de vida debe ser mayor a cero');
+        setTimeout(() => {
+          setError('');
+        }, 5000);
+        focusOnErrorField('anosVida');
+        return false;
+      }
+    }
+
+    // Validación de los temperamentos (debe seleccionar al menos uno)
+    if (temperamentos.length === 0) {
+      setError('Debe seleccionar al menos un temperamento');
+      setTimeout(() => {
+        setError('');
+      }, 5000);
+      focusOnErrorField('temperamentos');
+      return false;
+    }
+
+    return true;
+  };
+  const focusOnErrorField = (fieldName) => {
+    const fieldElement = document.getElementById(fieldName);
+    if (fieldElement) {
+      fieldElement.focus();
+    }
+  };
   const handleSubmit = (event) => {
     event.preventDefault();
-    // Validaciones de formulario aquí
 
-    // Crear objeto JSON para enviar al servidor
+    if (!validateForm()) {
+      return;
+    }
+
     const dogData = {
       imagen: {
         url: dogForm.imagenUrl,
@@ -69,19 +193,17 @@ const DogFormPage = () => {
       temperaments: dogForm.temperamentos.join(','),
       origen: 'BD',
     };
-    // console.log(JSON.stringify(dogData));
-    // Enviar el objeto JSON al servidor usando la ruta POST /dogs
 
     axios
       .post('http://localhost:3001/dogs', dogData)
       .then((response) => {
-        // console.log('Raza creada:', response.data);
-        // Realizar acciones adicionales después de crear la raza
-        history.goBack(); // Redireccionar a la página anterior
+        history.goBack();
       })
       .catch((error) => {
-        console.error('Error al crear la raza:', error);
-        // Manejar el error de alguna manera
+        setError('Error al crear la raza: ' + error.response.data.message);
+        setTimeout(() => {
+          setError('');
+        }, 5000);
       });
   };
 
@@ -93,6 +215,8 @@ const DogFormPage = () => {
     <div className="dog-form-container">
       <form className="dog-form" onSubmit={handleSubmit}>
         <h1>Dog Form Page</h1>
+
+        {error && <div className="error-message">{error}</div>}
 
         <div className="form-group">
           <label htmlFor="imagenUrl">Imagen URL:</label>

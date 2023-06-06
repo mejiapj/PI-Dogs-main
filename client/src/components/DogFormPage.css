@@ -65,3 +65,12 @@
 .dog-form button[type='submit']:hover {
   background-color: #45a049;
 }
+
+.error-message {
+  background-color: #f44336;
+  color: #fff;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  text-align: center;
+}

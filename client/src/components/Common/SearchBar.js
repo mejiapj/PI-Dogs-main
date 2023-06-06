@@ -15,9 +15,17 @@ const SearchBar = ({ onSearch }) => {
 
   const handleSearch = async () => {
     try {
+      /*
       const response = await axios.get(
         `http://localhost:3001/dogs/name/search/?name=${searchQuery}`
       );
+*/
+      const response = await axios.get(
+        searchQuery
+          ? `http://localhost:3001/dogs/name/search/?name=${searchQuery}`
+          : `http://localhost:3001/dogs`
+      );
+
       const searchResults = response.data;
       // console.log(searchResults);
       onSearch(searchResults);
