@@ -10,7 +10,6 @@ const DogCard = ({ dog, onClick }) => {
       {imagen && imagen.url && (
         <img src={imagen.url} alt={nombre} width="200" height="150" />
       )}
-
       <h2>{nombre}</h2>
       <p className="temperaments">
         Temperaments:{' '}

@@ -35,10 +35,7 @@ const DogFormPage = () => {
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
-    setDogForm((prevDogForm) => ({
-      ...prevDogForm,
-      [name]: value,
-    }));
+    setDogForm({ ...dogForm, [name]: value });
   };
 
   const handleTemperamentoChange = (event) => {
@@ -46,10 +43,7 @@ const DogFormPage = () => {
       event.target.selectedOptions,
       (option) => option.value
     );
-    setDogForm((prevDogForm) => ({
-      ...prevDogForm,
-      temperamentos: selectedTemperamentos,
-    }));
+    setDogForm({ ...dogForm, temperamentos: selectedTemperamentos });
   };
 
   const validateForm = () => {
@@ -64,100 +58,115 @@ const DogFormPage = () => {
       temperamentos,
     } = dogForm;
 
-    const showError = (errorMessage, fieldName) => {
-      setError(errorMessage);
+    // Validación de la URL
+    const urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
+    if (!urlRegex.test(imagenUrl)) {
+      setError('La URL de la imagen no es válida');
+      setTimeout(() => {
+        setError('');
+      }, 5000); // Ocultar el mensaje de error después de 5 segundos
+      focusOnErrorField('imagenUrl');
+      return false;
+    }
+
+    // Validación del nombre (no debe contener números)
+    const nameRegex = /^[a-zA-Z ]*$/;
+    if (!nameRegex.test(nombre)) {
+      setError('El nombre no puede contener números');
       setTimeout(() => {
         setError('');
       }, 5000);
-      focusOnErrorField(fieldName);
+      focusOnErrorField('nombre');
       return false;
-    };
-
-    const validateNumberRange = (minValue, maxValue, fieldName) => {
-      if (minValue > maxValue || minValue <= 0 || maxValue <= 0) {
-        return showError(
-          `El valor mínimo debe ser menor que el valor máximo y ambos deben ser mayores a cero`,
-          fieldName
-        );
-      }
-      return true;
-    };
-
-    const validateYearsOfLife = (anosVidaValue) => {
-      const anosVidaPattern = /^(\d+-\d+|\d+)$/;
-
-      if (!anosVidaPattern.test(anosVidaValue)) {
-        return showError(
-          `El formato de los años de vida es inválido. Debe ser en el formato: número-número (ejemplo: 1-10) o un solo número mayor a cero`,
-          'anosVida'
-        );
-      }
-
-      if (anosVidaValue.includes('-')) {
-        const [minAnosVida, maxAnosVida] = anosVidaValue.split('-');
-        if (parseInt(minAnosVida) > parseInt(maxAnosVida)) {
-          return showError(
-            `El primer número de los años de vida no puede ser mayor al segundo número`,
-            'anosVida'
-          );
-        }
-      } else {
-        if (parseInt(anosVidaValue) <= 0) {
-          return showError(
-            `El número de años de vida debe ser mayor a cero`,
-            'anosVida'
-          );
-        }
-      }
-
-      return true;
-    };
-
-    if (!/^https?:\/\/\S+$/.test(imagenUrl)) {
-      return showError(`La URL de la imagen no es válida`, 'imagenUrl');
     }
 
-    if (!/^[a-zA-Z ]*$/.test(nombre)) {
-      return showError(`El nombre no puede contener números`, 'nombre');
-    }
-
+    // Validación de la altura mínima y máxima
     if (
-      !validateNumberRange(
-        Number(alturaMinima),
-        Number(alturaMaxima),
-        'alturaMinima'
-      )
+      Number(alturaMinima) > Number(alturaMaxima) ||
+      Number(alturaMinima) <= 0 ||
+      Number(alturaMaxima) <= 0
     ) {
-      return false;
-    }
-
-    if (
-      !validateNumberRange(Number(pesoMinimo), Number(pesoMaximo), 'pesoMinimo')
-    ) {
-      return false;
-    }
-
-    if (!validateYearsOfLife(anosVida)) {
-      return false;
-    }
-
-    if (temperamentos.length === 0) {
-      return showError(
-        `Debe seleccionar al menos un temperamento`,
-        'temperamentos'
+      setError(
+        'La altura mínima debe ser menor que la altura máxima y ambos valores deben ser mayores a cero'
       );
+      setTimeout(() => {
+        setError('');
+      }, 5000);
+      focusOnErrorField('alturaMinima');
+      return false;
+    }
+
+    // Validación del peso mínimo y máximo
+    if (
+      Number(pesoMinimo) > Number(pesoMaximo) ||
+      Number(pesoMinimo) <= 0 ||
+      Number(pesoMaximo) <= 0
+    ) {
+      setError(
+        'El peso mínimo debe ser menor que el peso máximo y ambos valores deben ser mayores a cero'
+      );
+      setTimeout(() => {
+        setError('');
+      }, 5000);
+      focusOnErrorField('pesoMinimo');
+      return false;
+    }
+
+    // Validación de los años de vida
+    const anosVidaPattern = /^(\d+-\d+|\d+)$/;
+
+    if (!anosVidaPattern.test(anosVida)) {
+      setError(
+        'El formato de los años de vida es inválido. Debe ser en el formato: número-número (ejemplo: 1-10) o un solo número mayor a cero'
+      );
+      setTimeout(() => {
+        setError('');
+      }, 5000);
+      focusOnErrorField('anosVida');
+      return false;
+    }
+
+    if (anosVida.includes('-')) {
+      const [minAnosVida, maxAnosVida] = anosVida.split('-');
+      if (parseInt(minAnosVida) > parseInt(maxAnosVida)) {
+        setError(
+          'El primer número de los años de vida no puede ser mayor al segundo número'
+        );
+        setTimeout(() => {
+          setError('');
+        }, 5000);
+        focusOnErrorField('anosVida');
+        return false;
+      }
+    } else {
+      if (parseInt(anosVida) <= 0) {
+        setError('El número de años de vida debe ser mayor a cero');
+        setTimeout(() => {
+          setError('');
+        }, 5000);
+        focusOnErrorField('anosVida');
+        return false;
+      }
+    }
+
+    // Validación de los temperamentos (debe seleccionar al menos uno)
+    if (temperamentos.length === 0) {
+      setError('Debe seleccionar al menos un temperamento');
+      setTimeout(() => {
+        setError('');
+      }, 5000);
+      focusOnErrorField('temperamentos');
+      return false;
     }
 
     return true;
   };
-
   const focusOnErrorField = (fieldName) => {
     const fieldElement = document.getElementById(fieldName);
     if (fieldElement) {
       fieldElement.focus();
     }
   };
-
   const handleSubmit = (event) => {
     event.preventDefault();
 
@@ -165,29 +174,22 @@ const DogFormPage = () => {
       return;
     }
 
-    const {
-      imagenUrl,
-      alturaMinima,
-      alturaMaxima,
-      pesoMinimo,
-      pesoMaximo,
-      anosVida,
-    } = dogForm;
-
     const dogData = {
       imagen: {
-        url: imagenUrl,
+        url: dogForm.imagenUrl,
       },
       altura: {
-        imperial: `${alturaMinima} - ${alturaMaxima}`,
-        metric: `${alturaMinima * 2.54} - ${alturaMaxima * 2.54}`,
+        imperial: `${dogForm.alturaMinima} - ${dogForm.alturaMaxima}`,
+        metric: `${dogForm.alturaMinima * 2.54} - ${
+          dogForm.alturaMaxima * 2.54
+        }`,
       },
       peso: {
-        imperial: `${pesoMinimo} - ${pesoMaximo}`,
-        metric: `${pesoMinimo * 0.45} - ${pesoMaximo * 0.45}`,
+        imperial: `${dogForm.pesoMinimo} - ${dogForm.pesoMaximo}`,
+        metric: `${dogForm.pesoMinimo * 0.45} - ${dogForm.pesoMaximo * 0.45}`,
       },
       nombre: dogForm.nombre,
-      anos_vida: anosVida,
+      anos_vida: dogForm.anosVida,
       temperaments: dogForm.temperamentos.join(','),
       origen: 'BD',
     };
