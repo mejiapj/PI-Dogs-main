@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import SearchBar from './Common/SearchBar';
@@ -20,29 +20,27 @@ const HomePage = () => {
   const history = useHistory();
   const dispatch = useDispatch();
   const dogs = useSelector((state) => state.dogs.dogs);
-  const temperamentFilter = useSelector(
-    (state) => state.temperament.temperamentFilter
-  );
-  const filteredDogs = useSelector((state) => state.dogs.filteredDogs);
+  const filterOptions = useSelector((state) => state.filterOptions);
   const pagination = useSelector((state) => state.dogs.pagination);
-  const sortOptions = useSelector((state) => state.dogs.sortOptions);
 
   useEffect(() => {
     dispatch(fetchDogs());
   }, [dispatch]);
 
   useEffect(() => {
-    dispatch(filterDogs(dogs, temperamentFilter, sortOptions));
-  }, [dogs, temperamentFilter, sortOptions, dispatch]);
-
-  const handleCardClick = (dog) => {
-    history.push({
-      pathname: `/dogs/${dog.id}`,
-      state: { dog: dog },
-    });
-  };
+    if (filterOptions && filterOptions.temperament) {
+      const filteredDogs = filterDogs(
+        dogs,
+        filterOptions.temperament,
+        filterOptions.source
+      );
+      dispatch(setFilteredDogs(filteredDogs));
+    }
+    // console.log('Breeds:', dogs);
+  }, [dogs, filterOptions, dispatch]);
 
   const handleSearch = (results) => {
+    // console.log('Breeds:', results);
     dispatch(setFilteredDogs(results));
   };
 
@@ -51,20 +49,30 @@ const HomePage = () => {
   };
 
   const handleChangePage = (page) => {
-    dispatch(setPagination({ ...pagination, currentPage: page }));
+    dispatch(setPagination(page, pagination.itemsPerPage));
   };
 
   const handleSortOptionsChange = (option) => {
     dispatch(setSortOptions(option));
   };
 
+  const paginatedDogs = useMemo(() => {
+    if (dogs) {
+      return dogs.slice(
+        (pagination.currentPage - 1) * pagination.itemsPerPage,
+        pagination.currentPage * pagination.itemsPerPage
+      );
+    }
+    return [];
+  }, [dogs, pagination]);
+
   return (
     <div>
       <SearchBar onSearch={handleSearch} />
       <Pagination
         currentPage={pagination.currentPage}
-        dogsPerPage={pagination.dogsPerPage}
-        totalDogs={filteredDogs.length}
+        dogsPerPage={pagination.itemsPerPage}
+        totalDogs={dogs.length}
         onChangePage={handleChangePage}
       />
       <div className="filter-sort-container">
@@ -74,18 +82,9 @@ const HomePage = () => {
           Create Dog
         </button>
       </div>
-      {filteredDogs
-        .slice(
-          (pagination.currentPage - 1) * pagination.dogsPerPage,
-          pagination.currentPage * pagination.dogsPerPage
-        )
-        .map((dog) => (
-          <DogCard
-            key={dog.id}
-            dog={dog}
-            onClick={() => handleCardClick(dog)}
-          />
-        ))}
+      {paginatedDogs.map((dog) => (
+        <DogCard key={dog.id} dog={dog} onClick={() => {}} />
+      ))}
     </div>
   );
 };

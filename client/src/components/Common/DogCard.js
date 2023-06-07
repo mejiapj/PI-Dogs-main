@@ -4,7 +4,7 @@ import './DogCard.css';
 
 const DogCard = ({ dog, onClick }) => {
   const { imagen, nombre, temperaments, peso } = dog;
-
+  // console.log('==>', dog);
   return (
     <div className="dog-card" onClick={onClick}>
       {imagen && imagen.url && (
@@ -13,7 +13,11 @@ const DogCard = ({ dog, onClick }) => {
       <h2>{nombre}</h2>
       <p className="temperaments">
         Temperaments:{' '}
-        {Array.isArray(temperaments) ? temperaments.join(', ') : temperaments}
+        {temperaments
+          ? Array.isArray(temperaments)
+            ? temperaments.join(', ')
+            : temperaments
+          : 'N/A'}
       </p>
       <h2>{peso.imperial} lbs</h2>
       <h2>{peso.metric} kg</h2>

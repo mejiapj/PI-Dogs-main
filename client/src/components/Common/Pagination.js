@@ -1,40 +1,34 @@
 import React from 'react';
-import './Pagination.css';
-import KeyboardArrowLeftIcon from '@material-ui/icons/KeyboardArrowLeft';
-import KeyboardArrowRightIcon from '@material-ui/icons/KeyboardArrowRight';
+import { useSelector, useDispatch } from 'react-redux';
 
-const Pagination = ({ currentPage, dogsPerPage, totalDogs, onChangePage }) => {
-  const totalPages = Math.ceil(totalDogs / dogsPerPage);
+import { setPagination } from '../../actions/dogsActions';
 
-  const handleClick = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      onChangePage(page);
-    }
+const Pagination = () => {
+  const dispatch = useDispatch();
+  const dogs = useSelector((state) => state.dogs.filteredDogs) || [];
+  const pagination = useSelector((state) => state.dogs.pagination) || {};
+  const { currentPage, dogsPerPage } = pagination;
+
+  const pageNumbers = [];
+  for (let i = 1; i <= Math.ceil(dogs.length / dogsPerPage); i++) {
+    pageNumbers.push(i);
+  }
+
+  const handlePageClick = (pageNumber) => {
+    dispatch(setPagination({ currentPage: pageNumber, dogsPerPage }));
   };
 
   return (
     <div className="pagination">
-      <div className="page-buttons">
+      {pageNumbers.map((pageNumber) => (
         <button
-          className="prevPage"
-          onClick={() => handleClick(currentPage - 1)}
+          key={pageNumber}
+          onClick={() => handlePageClick(pageNumber)}
+          className={pageNumber === currentPage ? 'active' : ''}
         >
-          <KeyboardArrowLeftIcon />
+          {pageNumber}
         </button>
-      </div>
-      <div className="page-info">
-        <p>
-          Total results: {totalDogs} | Page: {currentPage} of {totalPages}
-        </p>
-      </div>
-      <div className="page-buttons">
-        <button
-          className="nextPage"
-          onClick={() => handleClick(currentPage + 1)}
-        >
-          <KeyboardArrowRightIcon />
-        </button>
-      </div>
+      ))}
     </div>
   );
 };

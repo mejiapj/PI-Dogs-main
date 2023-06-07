@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
-import { setFilterOptions, setFilteredDogs } from '../../actions/dogsActions';
+import { setFilterOptions, filterDogs } from '../../actions/dogsActions';
 import { fetchTemperaments } from '../../actions/temperamentActions';
 
 const FilterOptions = () => {
@@ -23,38 +23,13 @@ const FilterOptions = () => {
     dispatch(
       setFilterOptions({ ...filterOptions, temperament: selectedTemperament })
     );
-    filterDogs({
-      ...filterOptions,
-      temperament: selectedTemperament,
-      source: filterOptions.source,
-    });
+    dispatch(filterDogs(dogs, selectedTemperament, filterOptions.source));
   };
 
   const handleSourceChange = (e) => {
     const selectedSource = e.target.value;
     dispatch(setFilterOptions({ ...filterOptions, source: selectedSource }));
-    filterDogs({
-      ...filterOptions,
-      temperament: filterOptions.temperament,
-      source: selectedSource,
-    });
-  };
-
-  const filterDogs = (options) => {
-    const { temperament, source } = options;
-    let filteredDogs = dogs;
-
-    if (temperament) {
-      filteredDogs = filteredDogs.filter(
-        (dog) => dog.temperaments && dog.temperaments.includes(temperament)
-      );
-    }
-
-    if (source) {
-      filteredDogs = filteredDogs.filter((dog) => dog.source === source);
-    }
-
-    dispatch(setFilteredDogs(filteredDogs));
+    dispatch(filterDogs(dogs, filterOptions.temperament, selectedSource));
   };
 
   return (
@@ -67,7 +42,7 @@ const FilterOptions = () => {
       >
         <option value="">All</option>
         {temperaments.map((temperament) => (
-          <option key={temperament.id} value={temperament.id}>
+          <option key={temperament.id} value={temperament.name}>
             {temperament.name}
           </option>
         ))}

@@ -13,6 +13,7 @@ export const fetchDogs = () => {
       const data = await response.json();
       dispatch(fetchDogsSuccess(data));
       dispatch(setFilteredDogs(data));
+      // console.log(data);
     } catch (error) {
       console.error('Error fetching dogs:', error);
     }
@@ -33,23 +34,17 @@ export const setFilteredDogs = (dogs) => {
   };
 };
 
-export const setPagination = (currentPage, itemsPerPage) => {
+export const setPagination = (pagination) => {
   return {
     type: SET_PAGINATION,
-    payload: {
-      currentPage,
-      itemsPerPage,
-    },
+    payload: pagination,
   };
 };
 
-export const setSortOptions = (sortKey, sortOrder) => {
+export const setSortOptions = (sortOptions) => {
   return {
     type: SET_SORT_OPTIONS,
-    payload: {
-      sortKey,
-      sortOrder,
-    },
+    payload: sortOptions,
   };
 };
 
@@ -60,30 +55,22 @@ export const setFilterOptions = (filterOptions) => {
   };
 };
 
-export const filterDogs = (dogs, temperamentFilter, sortOptions) => {
+export const filterDogs = (dogs, temperament, source) => {
   return (dispatch) => {
-    const filteredAndSortedDogs = dogs
-      .filter((dog) => {
-        if (temperamentFilter) {
-          return (
-            dog.temperaments && dog.temperaments.includes(temperamentFilter)
-          );
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        if (sortOptions === 'alphabetical') {
-          return a.nombre.localeCompare(b.nombre);
-        } else if (sortOptions === 'alphabetical-desc') {
-          return b.nombre.localeCompare(a.nombre);
-        } else if (sortOptions === 'weight') {
-          return parseFloat(a.peso.metric) - parseFloat(b.peso.metric);
-        } else if (sortOptions === 'weight-desc') {
-          return parseFloat(b.peso.metric) - parseFloat(a.peso.metric);
-        }
-        return 0;
-      });
+    let filteredDogs = dogs;
 
-    dispatch(setFilteredDogs(filteredAndSortedDogs));
+    if (temperament) {
+      filteredDogs = filteredDogs.filter((dog) =>
+        dog.temperament?.includes(temperament)
+      );
+    }
+
+    if (source) {
+      filteredDogs = filteredDogs.filter((dog) =>
+        dog.source?.toLowerCase().includes(source.toLowerCase())
+      );
+    }
+
+    dispatch(setFilteredDogs(filteredDogs));
   };
 };
