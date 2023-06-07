@@ -1,33 +1,26 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-import './SortOptions.css';
+import { useDispatch } from 'react-redux';
+import { setSortOptions } from '../../actions/dogsActions';
 
-const SortOptions = ({ sortOptions, setSortOptions }) => {
-  const handleSortChange = (value) => {
-    setSortOptions(value);
+const SortOptions = () => {
+  const dispatch = useDispatch();
+
+  const handleSortChange = (e) => {
+    const selectedSortOption = e.target.value;
+    dispatch(setSortOptions(selectedSortOption));
   };
 
   return (
     <div className="sort-options">
-      <label htmlFor="sort">Sort By:</label>
-      <select
-        id="sort"
-        value={sortOptions}
-        onChange={(e) => handleSortChange(e.target.value)}
-      >
-        <option value="">None</option>
+      <label htmlFor="sort-select">Sort by:</label>
+      <select id="sort-select" onChange={handleSortChange}>
         <option value="alphabetical">Alphabetical (A-Z)</option>
         <option value="alphabetical-desc">Alphabetical (Z-A)</option>
-        <option value="weight">Weight (Low to High)</option>
-        <option value="weight-desc">Weight (High to Low)</option>
+        <option value="weight">Weight (asc)</option>
+        <option value="weight-desc">Weight (desc)</option>
       </select>
     </div>
   );
-};
-
-SortOptions.propTypes = {
-  sortOptions: PropTypes.string,
-  setSortOptions: PropTypes.func,
 };
 
 export default SortOptions;

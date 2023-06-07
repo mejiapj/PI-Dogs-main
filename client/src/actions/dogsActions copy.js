@@ -11,18 +11,14 @@ export const fetchDogs = () => {
     try {
       const response = await fetch('http://localhost:3001/dogs');
       const data = await response.json();
-      dispatch(fetchDogsSuccess(data));
-      dispatch(setFilteredDogs(data));
+
+      dispatch({
+        type: FETCH_DOGS_SUCCESS,
+        payload: data,
+      });
     } catch (error) {
       console.error('Error fetching dogs:', error);
     }
-  };
-};
-
-export const fetchDogsSuccess = (dogs) => {
-  return {
-    type: FETCH_DOGS_SUCCESS,
-    payload: dogs,
   };
 };
 
@@ -33,23 +29,17 @@ export const setFilteredDogs = (dogs) => {
   };
 };
 
-export const setPagination = (currentPage, itemsPerPage) => {
+export const setPagination = (pagination) => {
   return {
     type: SET_PAGINATION,
-    payload: {
-      currentPage,
-      itemsPerPage,
-    },
+    payload: pagination,
   };
 };
 
-export const setSortOptions = (sortKey, sortOrder) => {
+export const setSortOptions = (sortOptions) => {
   return {
     type: SET_SORT_OPTIONS,
-    payload: {
-      sortKey,
-      sortOrder,
-    },
+    payload: sortOptions,
   };
 };
 

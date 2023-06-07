@@ -12,6 +12,7 @@ import {
   fetchDogs,
   setFilteredDogs,
   setPagination,
+  filterDogs,
   setSortOptions,
 } from '../actions/dogsActions';
 
@@ -31,35 +32,7 @@ const HomePage = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    const filterAndSortDogs = () => {
-      if (Array.isArray(dogs)) {
-        const filteredAndSortedDogs = dogs
-          .filter((dog) => {
-            if (temperamentFilter) {
-              return (
-                dog.temperaments && dog.temperaments.includes(temperamentFilter)
-              );
-            }
-            return true;
-          })
-          .sort((a, b) => {
-            if (sortOptions === 'alphabetical') {
-              return a.nombre.localeCompare(b.nombre);
-            } else if (sortOptions === 'alphabetical-desc') {
-              return b.nombre.localeCompare(a.nombre);
-            } else if (sortOptions === 'weight') {
-              return parseFloat(a.peso.metric) - parseFloat(b.peso.metric);
-            } else if (sortOptions === 'weight-desc') {
-              return parseFloat(b.peso.metric) - parseFloat(a.peso.metric);
-            }
-            return 0;
-          });
-
-        dispatch(setFilteredDogs(filteredAndSortedDogs));
-      }
-    };
-
-    filterAndSortDogs();
+    dispatch(filterDogs(dogs, temperamentFilter, sortOptions));
   }, [dogs, temperamentFilter, sortOptions, dispatch]);
 
   const handleCardClick = (dog) => {
@@ -81,6 +54,10 @@ const HomePage = () => {
     dispatch(setPagination({ ...pagination, currentPage: page }));
   };
 
+  const handleSortOptionsChange = (option) => {
+    dispatch(setSortOptions(option));
+  };
+
   return (
     <div>
       <SearchBar onSearch={handleSearch} />
@@ -92,7 +69,7 @@ const HomePage = () => {
       />
       <div className="filter-sort-container">
         <FilterOptions />
-        <SortOptions />
+        <SortOptions onChange={handleSortOptionsChange} />
         <button className="create-dog-button" onClick={handleCreateDog}>
           Create Dog
         </button>

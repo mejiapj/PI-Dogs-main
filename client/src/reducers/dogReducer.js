@@ -14,6 +14,10 @@ const initialState = {
     dogsPerPage: 8,
   },
   sortOptions: '',
+  filterOptions: {
+    temperaments: '',
+    source: '',
+  },
 };
 
 // Define el reductor
@@ -38,6 +42,11 @@ const dogReducer = (state = initialState, action) => {
       return {
         ...state,
         sortOptions: action.payload,
+      };
+    case SET_FILTER_OPTIONS:
+      return {
+        ...state,
+        filterOptions: action.payload,
       };
     default:
       return state;

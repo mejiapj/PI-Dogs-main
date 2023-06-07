@@ -1,19 +1,15 @@
 // Define los tipos de acciones
-export const SET_TEMPERAMENT_FILTER = 'SET_TEMPERAMENT_FILTER';
+export const FETCH_TEMPERAMENTS_SUCCESS = 'FETCH_TEMPERAMENTS_SUCCESS';
 
 // Define el estado inicial del reductor
-const initialState = {
-  temperamentFilter: '',
-};
+const initialState = [];
 
 // Define el reductor
 const temperamentReducer = (state = initialState, action) => {
   switch (action.type) {
-    case SET_TEMPERAMENT_FILTER:
-      return {
-        ...state,
-        temperamentFilter: action.payload,
-      };
+    case 'FETCH_TEMPERAMENTS_SUCCESS':
+      return action.temperaments;
+
     default:
       return state;
   }

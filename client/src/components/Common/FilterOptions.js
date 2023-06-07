@@ -1,36 +1,60 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import './FilterOptions.css';
-import { useDispatch, useSelector } from 'react-redux';
-import { setFilterOptions } from '../../actions/dogsActions';
+import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+
+import { setFilterOptions, setFilteredDogs } from '../../actions/dogsActions';
+import { fetchTemperaments } from '../../actions/temperamentActions';
 
 const FilterOptions = () => {
   const dispatch = useDispatch();
-  const filterOptions = useSelector((state) => state.filterOptions);
-  const [temperaments, setTemperaments] = useState([]);
+  const filterOptions = useSelector((state) => state.filterOptions) || {
+    temperament: '',
+    source: '',
+  };
+
+  const temperaments = useSelector((state) => state.temperament) || [];
+  const dogs = useSelector((state) => state.dogs.dogs) || [];
 
   useEffect(() => {
-    const fetchTemperaments = async () => {
-      try {
-        const response = await axios.get('http://localhost:3001/temperaments');
-        const data = response.data;
-        setTemperaments(data);
-      } catch (error) {
-        console.error('Error fetching temperaments:', error);
-      }
-    };
-
-    fetchTemperaments();
-  }, []);
+    dispatch(fetchTemperaments());
+  }, [dispatch]);
 
   const handleTemperamentChange = (e) => {
+    const selectedTemperament = e.target.value;
     dispatch(
-      setFilterOptions({ ...filterOptions, temperament: e.target.value })
+      setFilterOptions({ ...filterOptions, temperament: selectedTemperament })
     );
+    filterDogs({
+      ...filterOptions,
+      temperament: selectedTemperament,
+      source: filterOptions.source,
+    });
   };
 
   const handleSourceChange = (e) => {
-    dispatch(setFilterOptions({ ...filterOptions, source: e.target.value }));
+    const selectedSource = e.target.value;
+    dispatch(setFilterOptions({ ...filterOptions, source: selectedSource }));
+    filterDogs({
+      ...filterOptions,
+      temperament: filterOptions.temperament,
+      source: selectedSource,
+    });
+  };
+
+  const filterDogs = (options) => {
+    const { temperament, source } = options;
+    let filteredDogs = dogs;
+
+    if (temperament) {
+      filteredDogs = filteredDogs.filter(
+        (dog) => dog.temperaments && dog.temperaments.includes(temperament)
+      );
+    }
+
+    if (source) {
+      filteredDogs = filteredDogs.filter((dog) => dog.source === source);
+    }
+
+    dispatch(setFilteredDogs(filteredDogs));
   };
 
   return (
@@ -38,12 +62,12 @@ const FilterOptions = () => {
       <label htmlFor="temperament-select">Temperament:</label>
       <select
         id="temperament-select"
-        value={filterOptions?.temperament || ''}
+        value={filterOptions.temperament}
         onChange={handleTemperamentChange}
       >
         <option value="">All</option>
         {temperaments.map((temperament) => (
-          <option key={temperament.name} value={temperament.name}>
+          <option key={temperament.id} value={temperament.id}>
             {temperament.name}
           </option>
         ))}
@@ -52,7 +76,7 @@ const FilterOptions = () => {
       <label htmlFor="source-select">Source:</label>
       <select
         id="source-select"
-        value={filterOptions?.source || ''}
+        value={filterOptions.source}
         onChange={handleSourceChange}
       >
         <option value="">All</option>
